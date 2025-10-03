@@ -4,8 +4,14 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <propsys.h>
+#include <propvarutil.h>
 #include <shobjidl.h>
+#include <wil/com.h>
+#include <iostream>
 #pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "Propsys.lib")
 using namespace std;
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
@@ -14,6 +20,25 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 int argc;
 wchar_t** argv;
+
+void SetPreventPinning(HWND hwnd, BOOL preventPinning)
+{
+	wil::com_ptr<IPropertyStore> propStore;
+	if (SUCCEEDED(SHGetPropertyStoreForWindow(hwnd, IID_PPV_ARGS(&propStore))))
+	{
+		PROPVARIANT var;
+		InitPropVariantFromBoolean(preventPinning, &var);
+
+		PROPERTYKEY key{};
+		key.fmtid = { 0x9F4C2855, 0x9F79, 0x4B39, { 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3 } }; // FMTID_AppUserModel
+		key.pid = 9; // PKEY_AppUserModel_PreventPinning
+
+		propStore->SetValue(key, var);
+		propStore->Commit();
+
+		PropVariantClear(&var);
+	}
+}
 
 static void CenterWindow(HWND hwnd, HWND parent) {
 	RECT rcParent{};
@@ -58,9 +83,6 @@ static std::vector<std::wstring>& str_split(
 	dest.push_back(substring);
 	return dest;
 }
-
-#include <wil/com.h>
-#include <iostream>
 
 HWND g_mainWindow = nullptr;
 wil::com_ptr<ICoreWebView2Controller> g_webviewController;
@@ -282,6 +304,7 @@ int WINAPI wWinMain(
 		hInstance,
 		nullptr
 	);
+	SetPreventPinning(g_mainWindow, TRUE);
 	CenterWindow(g_mainWindow, NULL);
 	ShowWindow(g_mainWindow, nShowCmd);
 
