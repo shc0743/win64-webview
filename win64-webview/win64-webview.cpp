@@ -271,6 +271,7 @@ int WINAPI wWinMain(
 	std::wstring url = argv[1];
 	std::wstring userDataDir = argv[2];
 	long width = 1280, height = 720;
+	bool AppUserModelIdIsSet = false;
 	if (argc >= 4) {
 		vector<wstring> str;
 		str_split(argv[3], L"x", str);
@@ -293,6 +294,9 @@ int WINAPI wWinMain(
 		if (FAILED(hr)) {
 			cerr << "Failed to set AppUserModelID" << endl;
 		}
+		else {
+			AppUserModelIdIsSet = true;
+		}
 	}
 	wstring className = L"win64-webview";
 	if (argc >= 6) {
@@ -314,7 +318,7 @@ int WINAPI wWinMain(
 		hInstance,
 		nullptr
 	);
-	SetPreventPinning(g_mainWindow, TRUE);
+	if (!AppUserModelIdIsSet) SetPreventPinning(g_mainWindow, TRUE);
 	CenterWindow(g_mainWindow, NULL);
 	ShowWindow(g_mainWindow, nShowCmd);
 
