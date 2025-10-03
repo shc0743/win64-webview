@@ -103,13 +103,6 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	case WM_PAINT:
-	{
-		PAINTSTRUCT ps{};
-		HDC hdc = BeginPaint(hwnd, &ps);
-		EndPaint(hwnd, &ps);
-	}
-		break;
 	default:
 		return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
