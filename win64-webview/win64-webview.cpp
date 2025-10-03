@@ -100,6 +100,13 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 			g_webviewController->put_Bounds(bounds);
 		}
 		return DefWindowProc(hwnd, msg, wParam, lParam);
+	case WM_SETFOCUS:
+	case WM_KEYDOWN:
+		if (g_webviewController)
+		{
+			g_webviewController->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+		}
+		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
