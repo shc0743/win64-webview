@@ -237,6 +237,23 @@ private:
 };
 
 
+static ATOM ClassReg(wstring name) {
+	WNDCLASSEXW wcex{};
+	wcex.cbSize = sizeof(WNDCLASSEXW);
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = GetModuleHandleW(NULL);
+	wcex.hIcon = wcex.hIconSm = LoadIconW(LoadLibraryW(L"imageres.dll"), MAKEINTRESOURCEW(15));
+	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	wcex.hbrBackground = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
+	wcex.lpszMenuName = NULL;
+	wcex.lpszClassName = name.c_str();
+
+	return RegisterClassExW(&wcex);
+}
+
 int WINAPI wWinMain(
 	_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -247,7 +264,7 @@ int WINAPI wWinMain(
 	class _argv_free_ { public: ~_argv_free_() { LocalFree(argv); } } _argv_free;
 
 	if (argc < 3) {
-		MessageBoxW(nullptr, L"Usage: webview.exe <Url> <UserDataDir> [<width>x<height>] [<AppUserModelId>]", L"Info", MB_ICONINFORMATION);
+		MessageBoxW(nullptr, L"Usage: webview.exe <Url> <UserDataDir> [<width>x<height>] [<AppUserModelId>] [<Window Class>]", L"Info", MB_ICONINFORMATION);
 		return 0;
 	}
 
@@ -277,18 +294,18 @@ int WINAPI wWinMain(
 			cerr << "Failed to set AppUserModelID" << endl;
 		}
 	}
+	wstring className = L"win64-webview";
+	if (argc >= 6) {
+		className = argv[5];
+	}
 
-	const wchar_t CLASS_NAME[] = L"win64-webview";
-	WNDCLASSEXW wc = {};
-	wc.cbSize = sizeof(wc);
-	wc.lpfnWndProc = WndProc;
-	wc.hInstance = hInstance;
-	wc.lpszClassName = CLASS_NAME;
-	RegisterClassExW(&wc);
-
+	if (!ClassReg(className)) {
+		MessageBoxW(nullptr, L"Class Registration Failed", L"Fatal Error", MB_ICONERROR);
+		return GetLastError();
+	}
 	g_mainWindow = CreateWindowExW(
 		0,
-		CLASS_NAME,
+		className.c_str(),
 		url.c_str(),
 		WS_OVERLAPPEDWINDOW,
 		0, 0, width, height,
