@@ -146,6 +146,37 @@ private:
 	ULONG refCount_;
 };
 
+class WindowCloseHandler : public ICoreWebView2WindowCloseRequestedEventHandler
+{
+public:
+	WindowCloseHandler(HWND hwnd) : hwnd_(hwnd), refCount_(1) {}
+
+	// IUnknown
+	ULONG STDMETHODCALLTYPE AddRef() override { return ++refCount_; }
+	ULONG STDMETHODCALLTYPE Release() override { ULONG r = --refCount_; if (r == 0) delete this; return r; }
+	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
+	{
+		if (riid == IID_IUnknown || riid == __uuidof(ICoreWebView2WindowCloseRequestedEventHandler))
+		{
+			*ppvObject = static_cast<ICoreWebView2WindowCloseRequestedEventHandler*>(this);
+			AddRef();
+			return S_OK;
+		}
+		*ppvObject = nullptr;
+		return E_NOINTERFACE;
+	}
+
+	HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* sender, IUnknown* args) override
+	{
+		PostMessage(hwnd_, WM_CLOSE, 0, 0);
+		return S_OK;
+	}
+
+private:
+	HWND hwnd_;
+	ULONG refCount_;
+};
+
 class ControllerHandler : public ICoreWebView2CreateCoreWebView2ControllerCompletedHandler
 {
 	std::wstring url_;
@@ -180,10 +211,15 @@ public:
 
 		if (g_webview) {
 			g_webview->Navigate(url_.c_str());
-			EventRegistrationToken token;
+			EventRegistrationToken tokenTitleChanged;
 			g_webview->add_DocumentTitleChanged(
 				new TitleChangedHandler(g_mainWindow),
-				&token
+				&tokenTitleChanged
+			);
+			EventRegistrationToken tokenClose;
+			g_webview->add_WindowCloseRequested(
+				new WindowCloseHandler(g_mainWindow),
+				&tokenClose
 			);
 		}
 		return S_OK;
